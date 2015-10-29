@@ -1,5 +1,4 @@
 import spark.ModelAndView;
-import spark.Session;
 import spark.Spark;
 import spark.template.mustache.MustacheTemplateEngine;
 
@@ -12,6 +11,8 @@ import java.util.HashMap;
  * Created by zach on 10/19/15.
  */
 public class People {
+    private static final int SHOW_COUNT = 20;
+
     public static void main(String[] args) {
         ArrayList<Person> people = new ArrayList();
 
@@ -30,7 +31,7 @@ public class People {
         Spark.get(
                 "/",
                 ((request, response) -> {
-                    String offset = request.queryParams("page");
+                    String offset = request.queryParams("offset");
                     int counter;
                     if(offset == null) {
                         counter = 0;
@@ -42,10 +43,21 @@ public class People {
                         Spark.halt(403);
                     }
                     else {
-                        ArrayList<Person> tempList = new ArrayList<Person>(people.subList(counter, counter + 20));
+                        ArrayList<Person> tempList = new ArrayList<Person>(people.subList(
+                                Math.max(0, Math.min(people.size(), counter)),
+                                Math.max(0, Math.min(people.size(), counter + SHOW_COUNT))
+                        ));
                         HashMap m = new HashMap();
                         m.put("people", tempList);
-                        m.put("pagecounter", counter+20);
+                        m.put("oldOffset", counter - SHOW_COUNT);
+                        m.put("pagecounter", counter + SHOW_COUNT);
+
+                        boolean showPrevious = counter > 0;
+                        m.put("showPrevious", showPrevious);
+
+                        boolean showNext = counter + SHOW_COUNT < people.size();
+                        m.put("showNext", showNext);
+
                         return new ModelAndView(m, "people.html");
                     }
 
@@ -61,11 +73,7 @@ public class People {
                     try {
                         int idNum = Integer.valueOf(id);
                         Person person = people.get(idNum-1);
-                        ArrayList<Person> personInfo = new ArrayList();
-                        m.put("person", personInfo);
                         m.put("person", person);
-
-
                     } catch (Exception e) {
 
                     }

@@ -3,6 +3,11 @@
 {{#people}}
 <a href="/person?id={{id}}">{{firstName}} {{lastName}}</a><br>
 {{/people}}<br>
-<a href="/?page={{pagecounter}}">Next</a>
+{{#showPrevious}}
+<a href="/?offset={{oldOffset}}">Previous</a>
+{{/showPrevious}}
+{{#showNext}}
+<a href="/?offset={{pagecounter}}">Next</a>
+{{/showNext}}
 </body>
 </html>
