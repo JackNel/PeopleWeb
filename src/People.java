@@ -4,6 +4,10 @@ import spark.template.mustache.MustacheTemplateEngine;
 
 import java.io.File;
 import java.io.FileReader;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -13,7 +17,17 @@ import java.util.HashMap;
 public class People {
     private static final int SHOW_COUNT = 20;
 
-    public static void main(String[] args) {
+    public static void createTables(Connection conn) throws SQLException {
+        Statement stmt = conn.createStatement();
+        stmt.execute("DROP TABLE IF EXISTS people");
+        stmt.execute("CREATE TABLE people (id IDENTITY, first_name VARCHAR, last_name VARCHAR, email VARCHAR, country VARCHAR, ip VARCHAR)");
+    }
+
+    public static void main(String[] args) throws SQLException {
+        Connection conn = DriverManager.getConnection("jdbc:h2:./people");
+        createTables(conn);
+
+
         ArrayList<Person> people = new ArrayList();
 
         String fileContent = readFile("people.csv");
