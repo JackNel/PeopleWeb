@@ -48,6 +48,36 @@ public class People {
         return person;
     }
 
+    public static void populateDatabase(Connection conn) throws SQLException {
+        String fileContent = readFile("people.csv");
+        String[] lines = fileContent.split("\n");
+
+        for (String line : lines) {
+            if (line == lines[0])
+                continue;
+            String[] columns = line.split(",");
+            Person person = new Person(Integer.valueOf(columns[0]), columns[1], columns[2], columns[3], columns[4], columns[5]);
+            insertPerson(conn, person.firstName, person.lastName, person.email, person.country, person.ip);
+        }
+    }
+
+    public static ArrayList<Person> selectPeople(Connection conn) throws SQLException {
+        ArrayList<Person> people = new ArrayList();
+        Statement stmt = conn.createStatement();
+        ResultSet results = stmt.executeQuery("SELECT * FROM people");
+        while (results.next()) {
+            Person person = new Person();
+            person.id = results.getInt("id");
+            person.firstName = results.getString("first_name");
+            person.lastName = results.getString("last_name");
+            person.email = results.getString("email");
+            person.country = results.getString("country");
+            person.ip = results.getString("ip");
+            people.add(person);
+        }
+        return people;
+    }
+
     public static void main(String[] args) throws SQLException {
         Connection conn = DriverManager.getConnection("jdbc:h2:./people");
         createTables(conn);
@@ -55,17 +85,7 @@ public class People {
 
         ArrayList<Person> people = new ArrayList();
 
-        String fileContent = readFile("people.csv");
-        String[] lines = fileContent.split("\n");
 
-        for (String line : lines) {
-            if (line == lines[0])
-                continue;
-
-            String[] columns = line.split(",");
-            Person person = new Person(Integer.valueOf(columns[0]), columns[1], columns[2], columns[3], columns[4], columns[5]);
-            people.add(person);
-        }
 
         Spark.get(
                 "/",
