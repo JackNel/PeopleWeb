@@ -1,13 +1,11 @@
+import org.h2.command.Prepared;
 import spark.ModelAndView;
 import spark.Spark;
 import spark.template.mustache.MustacheTemplateEngine;
 
 import java.io.File;
 import java.io.FileReader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -20,7 +18,34 @@ public class People {
     public static void createTables(Connection conn) throws SQLException {
         Statement stmt = conn.createStatement();
         stmt.execute("DROP TABLE IF EXISTS people");
-        stmt.execute("CREATE TABLE people (id IDENTITY, first_name VARCHAR, last_name VARCHAR, email VARCHAR, country VARCHAR, ip VARCHAR)");
+        stmt.execute("CREATE TABLE IF NOT EXISTS people (id IDENTITY, first_name VARCHAR, last_name VARCHAR, email VARCHAR, country VARCHAR, ip VARCHAR)");
+    }
+
+    public static void insertPerson(Connection conn, String firstName, String lastName, String email, String country, String ip) throws SQLException {
+        PreparedStatement stmt = conn.prepareStatement("INSERT INTO people VALUES (NULL, ?, ?, ?, ?, ?)");
+        stmt.setString(1, firstName);
+        stmt.setString(2, lastName);
+        stmt.setString(3, email);
+        stmt.setString(4, country);
+        stmt.setString(5, ip);
+        stmt.execute();
+    }
+
+    public static Person selectPerson(Connection conn, int id) throws SQLException {
+        Person person = new Person();
+        PreparedStatement stmt = conn.prepareStatement("SELECT * FROM people WHERE id = ?");
+        stmt.setInt(1, id);
+        ResultSet results = stmt.executeQuery();
+        if (results.next()) {
+            person = new Person();
+            person.id = results.getInt("people.id");
+            person.firstName = results.getString("people.first_name");
+            person.lastName = results.getString("people.last_name");
+            person.email = results.getString("people.email");
+            person.country = results.getString("people.country");
+            person.ip = results.getString("people.ip");
+        }
+        return person;
     }
 
     public static void main(String[] args) throws SQLException {
