@@ -39,7 +39,7 @@ public class PeopleTest {
         Connection conn = startConnection();
         People.insertPerson(conn, "Jack", "Neligan", "Jack@Jack.com", "USA", "12345");
         People.insertPerson(conn, "Katie", "Neligan", "Katie@Katie.com", "USA", "67890");
-        ArrayList<Person> people = People.selectPeople(conn);
+        ArrayList<Person> people = People.selectPeople(conn, 5);
         endConnection(conn);
 
         assertTrue(people.size() == 2);

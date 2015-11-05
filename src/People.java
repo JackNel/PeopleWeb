@@ -13,7 +13,7 @@ import java.util.HashMap;
  * Created by zach on 10/19/15.
  */
 public class People {
-    private static final int SHOW_COUNT = 20;
+    public static final int SHOW_COUNT = 20;
 
     public static void createTables(Connection conn) throws SQLException {
         Statement stmt = conn.createStatement();
@@ -38,12 +38,12 @@ public class People {
         ResultSet results = stmt.executeQuery();
         if (results.next()) {
             person = new Person();
-            person.id = results.getInt("people.id");
-            person.firstName = results.getString("people.first_name");
-            person.lastName = results.getString("people.last_name");
-            person.email = results.getString("people.email");
-            person.country = results.getString("people.country");
-            person.ip = results.getString("people.ip");
+            person.id = results.getInt("id");
+            person.firstName = results.getString("first_name");
+            person.lastName = results.getString("last_name");
+            person.email = results.getString("email");
+            person.country = results.getString("country");
+            person.ip = results.getString("ip");
         }
         return person;
     }
@@ -61,10 +61,13 @@ public class People {
         }
     }
 
-    public static ArrayList<Person> selectPeople(Connection conn) throws SQLException {
+    public static ArrayList<Person> selectPeople(Connection conn, int offset) throws SQLException {
         ArrayList<Person> people = new ArrayList();
-        Statement stmt = conn.createStatement();
-        ResultSet results = stmt.executeQuery("SELECT * FROM people");
+        String query = String.format("SELECT * FROM people LIMIT ? OFFSET ?");
+        PreparedStatement stmt = conn.prepareStatement(query);
+        stmt.setInt(1, SHOW_COUNT);
+        stmt.setInt(2, offset);
+        ResultSet results = stmt.executeQuery();
         while (results.next()) {
             Person person = new Person();
             person.id = results.getInt("id");
@@ -81,46 +84,34 @@ public class People {
     public static void main(String[] args) throws SQLException {
         Connection conn = DriverManager.getConnection("jdbc:h2:./people");
         createTables(conn);
-
-
-        ArrayList<Person> people = new ArrayList();
-
-
+        populateDatabase(conn);
 
         Spark.get(
                 "/",
                 ((request, response) -> {
                     String offset = request.queryParams("offset");
-                    int counter;
+                    int offsetNum;
                     if(offset == null) {
-                        counter = 0;
+                        offsetNum = 0;
                     }
                     else {
-                        counter = Integer.valueOf(offset);
+                        offsetNum = Integer.valueOf(offset);
                     }
-                    if (counter >= people.size()) {
-                        Spark.halt(403);
-                    }
-                    else {
-                        ArrayList<Person> tempList = new ArrayList<Person>(people.subList(
-                                Math.max(0, Math.min(people.size(), counter)),
-                                Math.max(0, Math.min(people.size(), counter + SHOW_COUNT))
-                        ));
-                        HashMap m = new HashMap();
-                        m.put("people", tempList);
-                        m.put("oldOffset", counter - SHOW_COUNT);
-                        m.put("pagecounter", counter + SHOW_COUNT);
+                    selectPeople(conn, offsetNum);
 
-                        boolean showPrevious = counter > 0;
-                        m.put("showPrevious", showPrevious);
+                    HashMap m = new HashMap();
+                    m.put("people", selectPeople(conn, offsetNum));
+                    m.put("oldOffset", offsetNum - SHOW_COUNT);
+                    m.put("pagecounter", offsetNum + SHOW_COUNT);
 
-                        boolean showNext = counter + SHOW_COUNT < people.size();
-                        m.put("showNext", showNext);
+                   /* boolean showPrevious = offsetNum > SHOW_COUNT;
+                    m.put("showPrevious", showPrevious);
 
-                        return new ModelAndView(m, "people.html");
-                    }
+                    boolean showNext = (offsetNum - SHOW_COUNT < selectPeople(conn, offsetNum).size());
+                    m.put("showNext", showNext);*/
 
-                    return new ModelAndView(new HashMap<>(), "people.html");
+                    return new ModelAndView(m, "people.html");
+
                 }),
                 new MustacheTemplateEngine()
         );
@@ -131,8 +122,7 @@ public class People {
                     String id = request.queryParams("id");
                     try {
                         int idNum = Integer.valueOf(id);
-                        Person person = people.get(idNum-1);
-                        m.put("person", person);
+                        m.put("person", selectPerson(conn, idNum));
                     } catch (Exception e) {
 
                     }
