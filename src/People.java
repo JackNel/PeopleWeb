@@ -101,14 +101,14 @@ public class People {
 
                     HashMap m = new HashMap();
                     m.put("people", selectPeople(conn, offsetNum));
-                    m.put("oldOffset", offsetNum - SHOW_COUNT);
-                    m.put("pagecounter", offsetNum + SHOW_COUNT);
+                    m.put("previousLink", offsetNum - SHOW_COUNT);
+                    m.put("nextLink", offsetNum + SHOW_COUNT);
 
-                   /* boolean showPrevious = offsetNum > SHOW_COUNT;
+                    boolean showPrevious = offsetNum > SHOW_COUNT;
                     m.put("showPrevious", showPrevious);
 
                     boolean showNext = (offsetNum - SHOW_COUNT < selectPeople(conn, offsetNum).size());
-                    m.put("showNext", showNext);*/
+                    m.put("showNext", showNext);
 
                     return new ModelAndView(m, "people.html");
 
